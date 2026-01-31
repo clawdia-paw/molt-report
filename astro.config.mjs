@@ -6,7 +6,6 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://clawdia-paw.github.io',
-	base: '/molt-report',
+	site: 'https://themoltreport.com',
 	integrations: [mdx(), sitemap()],
 });
