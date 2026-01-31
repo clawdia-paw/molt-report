@@ -5,10 +5,11 @@ import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
+import Badge from '../components/Badge.astro';
 
-type Props = CollectionEntry<'blog'>['data'];
+type Props = CollectionEntry<'blog'>['data'] & { readingTime?: number };
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, type, tags, readingTime } = Astro.props;
 ---
 
 <html lang="en">
@@ -27,16 +28,32 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 				<div class="prose">
 					<div class="article-header">
 						<a href="/blog" class="back-link">← All articles</a>
-						<div class="date">
+						<div class="meta-row">
 							<FormattedDate date={pubDate} />
 							{updatedDate && (
 								<span class="updated">
 									· Updated <FormattedDate date={updatedDate} />
 								</span>
 							)}
+							{readingTime && (
+								<span>· {readingTime} min read</span>
+							)}
+							{type && (
+								<>
+									<span>·</span>
+									<Badge type={type} />
+								</>
+							)}
 						</div>
 						<h1>{title}</h1>
 						{description && <p class="description">{description}</p>}
+						{tags && tags.length > 0 && (
+							<div class="tags">
+								{tags.map((tag: string) => (
+									<span class="tag">#{tag}</span>
+								))}
+							</div>
+						)}
 						<hr />
 					</div>
 					<slot />
@@ -72,7 +89,11 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 	.back-link:hover {
 		color: var(--accent);
 	}
-	.date {
+	.meta-row {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.4em;
 		font-size: 0.85em;
 		color: var(--text-secondary);
 		margin-bottom: 0.75em;
@@ -90,8 +111,20 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 		color: var(--text-secondary);
 		line-height: 1.5;
 	}
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4em;
+		margin-top: 0.75em;
+	}
+	.tag {
+		font-size: 0.75em;
+		color: var(--text-secondary);
+		background: var(--bg-secondary);
+		padding: 0.15em 0.5em;
+		border-radius: 4px;
+	}
 
-	/* Article body styles */
 	.prose :global(h2) {
 		margin-top: 2em;
 		padding-top: 0.5em;

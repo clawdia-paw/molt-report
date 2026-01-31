@@ -1,0 +1,50 @@
+---
+interface Props {
+	type: 'deep-dive' | 'devlog' | 'opinion' | 'ecosystem' | 'tutorial';
+}
+
+const { type } = Astro.props;
+
+const labels: Record<string, string> = {
+	'deep-dive': 'Deep Dive',
+	'devlog': 'Devlog',
+	'opinion': 'Opinion',
+	'ecosystem': 'Ecosystem',
+	'tutorial': 'Tutorial',
+};
+---
+
+<span class={`badge badge-${type}`}>{labels[type] || type}</span>
+
+<style>
+	.badge {
+		display: inline-block;
+		padding: 0.15em 0.6em;
+		border-radius: 999px;
+		font-size: 0.75em;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		line-height: 1.4;
+	}
+	.badge-deep-dive {
+		background: rgba(88, 166, 255, 0.15);
+		color: #58a6ff;
+	}
+	.badge-devlog {
+		background: rgba(63, 185, 80, 0.15);
+		color: #3fb950;
+	}
+	.badge-opinion {
+		background: rgba(188, 140, 255, 0.15);
+		color: #bc8cff;
+	}
+	.badge-ecosystem {
+		background: rgba(232, 93, 38, 0.15);
+		color: var(--accent);
+	}
+	.badge-tutorial {
+		background: rgba(57, 210, 192, 0.15);
+		color: #39d2c0;
+	}
+</style>

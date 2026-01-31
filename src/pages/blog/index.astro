@@ -1,14 +1,25 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
+import Badge from '../../components/Badge.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+
+// Get reading times by rendering each post
+const postsWithMeta = await Promise.all(posts.map(async (post) => {
+	const { remarkPluginFrontmatter } = await render(post);
+	const wordCount = post.body ? post.body.split(/\s+/).length : 0;
+	const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+	return { ...post, readingTime };
+}));
+
+const types = ['deep-dive', 'devlog', 'opinion', 'ecosystem', 'tutorial'] as const;
 ---
 
 <!doctype html>
@@ -21,16 +32,40 @@ const posts = (await getCollection('blog')).sort(
 		<main>
 			<h1 class="page-title">Articles</h1>
 			<p class="page-desc">All posts, newest first.</p>
+
+			<div class="filters">
+				<button class="filter-btn active" data-filter="all">All</button>
+				{types.map((t) => (
+					<button class="filter-btn" data-filter={t}>
+						<Badge type={t} />
+					</button>
+				))}
+			</div>
 			
 			<div class="post-list">
-				{posts.map((post) => (
-					<a href={`/blog/${post.id}/`} class="post-card">
-						<div class="post-date">
+				{postsWithMeta.map((post) => (
+					<a href={`/blog/${post.id}/`} class="post-card" data-type={post.data.type || 'all'}>
+						<div class="post-meta">
 							<FormattedDate date={post.data.pubDate} />
+							<span class="sep">·</span>
+							<span>{post.readingTime} min read</span>
+							{post.data.type && (
+								<>
+									<span class="sep">·</span>
+									<Badge type={post.data.type} />
+								</>
+							)}
 						</div>
 						<h2 class="post-title">{post.data.title}</h2>
 						{post.data.description && (
 							<p class="post-desc">{post.data.description}</p>
+						)}
+						{post.data.tags && post.data.tags.length > 0 && (
+							<div class="tags">
+								{post.data.tags.map((tag: string) => (
+									<span class="tag">#{tag}</span>
+								))}
+							</div>
 						)}
 						<span class="read-more">Read →</span>
 					</a>
@@ -38,6 +73,24 @@ const posts = (await getCollection('blog')).sort(
 			</div>
 		</main>
 		<Footer />
+
+		<script>
+			document.querySelectorAll('.filter-btn').forEach(btn => {
+				btn.addEventListener('click', () => {
+					document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+					btn.classList.add('active');
+					const filter = btn.getAttribute('data-filter');
+					document.querySelectorAll('.post-card').forEach(card => {
+						const el = card as HTMLElement;
+						if (filter === 'all' || el.getAttribute('data-type') === filter) {
+							el.style.display = '';
+						} else {
+							el.style.display = 'none';
+						}
+					});
+				});
+			});
+		</script>
 	</body>
 </html>
 
@@ -48,7 +101,33 @@ const posts = (await getCollection('blog')).sort(
 	}
 	.page-desc {
 		color: var(--text-secondary);
+		margin-bottom: 1.5em;
+	}
+	.filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5em;
 		margin-bottom: 2em;
+	}
+	.filter-btn {
+		background: var(--bg-card);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		padding: 0.35em 0.9em;
+		color: var(--text-secondary);
+		font-family: inherit;
+		font-size: 0.85em;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+	.filter-btn:hover {
+		border-color: var(--accent);
+		color: var(--text);
+	}
+	.filter-btn.active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: white;
 	}
 	.post-list {
 		display: flex;
@@ -69,10 +148,17 @@ const posts = (await getCollection('blog')).sort(
 		border-color: var(--accent);
 		transform: translateY(-1px);
 	}
-	.post-date {
+	.post-meta {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.4em;
 		font-size: 0.8em;
 		color: var(--text-secondary);
 		margin-bottom: 0.5em;
+	}
+	.sep {
+		opacity: 0.5;
 	}
 	.post-title {
 		font-size: 1.3em;
@@ -84,6 +170,19 @@ const posts = (await getCollection('blog')).sort(
 		font-size: 0.9em;
 		margin-bottom: 0.75em;
 		line-height: 1.5;
+	}
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4em;
+		margin-bottom: 0.75em;
+	}
+	.tag {
+		font-size: 0.75em;
+		color: var(--text-secondary);
+		background: var(--bg-secondary);
+		padding: 0.15em 0.5em;
+		border-radius: 4px;
 	}
 	.read-more {
 		color: var(--accent);
